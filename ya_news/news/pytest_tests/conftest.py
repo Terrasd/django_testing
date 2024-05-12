@@ -2,17 +2,13 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.utils import timezone
+from django.urls import reverse
 import pytest
 
 from news.models import News, Comment
 
 TEXT_COMMENT = 'Текст комментария'
-
-
-@pytest.fixture
-def new_text_comment():
-    """Новый текст для комментария."""
-    return {'text': 'Новый текст'}
+NEW_TEXT_COMMENT = {'text': 'Новый текст'}
 
 
 @pytest.fixture
@@ -22,7 +18,12 @@ def author(django_user_model):
 
 @pytest.fixture
 def author_client(author, client):
-    client.force_login(author)
+    new_client = client
+    new_client.force_login(author)
+    return client
+
+
+def guest_client(client):
     return client
 
 
@@ -48,27 +49,36 @@ def comment(news, author):
 
 @pytest.fixture
 def list_news():
-    today, list_news = datetime.today(), []
-    for index in range(settings.NEWS_COUNT_ON_HOME_PAGE):
-        news = News.objects.create(
-            title='Новость {index}',
+    today = datetime.today()
+    news_list = [
+        News(
+            title=f'Новость {index}',
             text='Текст новости',
-        )
-        news.date = today - timedelta(days=index)
-        news.save()
-        list_news.append(news)
-    return list_news
+            date=today - timedelta(days=index)
+        ) for index in range(settings.NEWS_COUNT_ON_HOME_PAGE)
+    ]
+    News.objects.bulk_create(news_list)
+    return news_list
 
 
 @pytest.fixture
 def list_comments(news, author):
-    now, list_comment = timezone.now(), []
+    now = timezone.now()
     for index in range(2):
         comment = Comment.objects.create(
-            text='Текст {index}',
+            text=f'Текст {index}',
             news=news,
             author=author,
         )
         comment.created = now + timedelta(days=index)
         comment.save()
-        list_comment.append(comment)
+
+
+@pytest.fixture
+def all_urls():
+    return {
+        'home': reverse('news:home'),
+        'login': reverse('users:login'),
+        'logout': reverse('users:logout'),
+        'signup': reverse('users:signup')
+    }

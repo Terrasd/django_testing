@@ -7,14 +7,10 @@ from pytest_django.asserts import assertRedirects
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(
-    'name',
-    ('news:home', 'users:login', 'users:logout', 'users:signup')
-)
-def test_pages_availability(client, name):
-    url = reverse(name)
-    response = client.get(url)
-    assert response.status_code == HTTPStatus.OK
+def test_pages_availability(client, all_urls):
+    for name, url in all_urls.items():
+        response = client.get(url)
+        assert response.status_code == HTTPStatus.OK
 
 
 @pytest.mark.django_db
@@ -48,8 +44,8 @@ def test_availability_for_comment_edit_and_delete(
     'name',
     ('news:edit', 'news:delete'),
 )
-def test_redirect_for_anonymous_client(client, name, comment):
-    login_url = reverse('users:login')
+def test_redirect_for_anonymous_client(client, all_urls, name, comment):
+    login_url = all_urls['login']
     url = reverse(name, args=(comment.id,))
     expected_url = f'{login_url}?next={url}'
     response = client.get(url)
