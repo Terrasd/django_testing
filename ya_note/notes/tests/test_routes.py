@@ -1,73 +1,55 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
 from django.urls import reverse
 
-from notes.models import Note
+from .common import CommonTestCase
 
 User = get_user_model()
 
 
-class TestRoutes(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.author = User.objects.create(username='author')
-        cls.author_client = Client()
-        cls.author_client.force_login(cls.author)
-        cls.auth_user = User.objects.create(username='auth_user')
-        cls.auth_user_client = Client()
-        cls.auth_user_client.force_login(cls.auth_user)
-        cls.note = Note.objects.create(
-            title='Заголовок',
-            text='Текст',
-            author=cls.author,
-        )
-
+class TestRoutes(CommonTestCase):
     def test_pages_availability_for_anonymous_user(self):
         urls = (
-            'notes:home',
-            'users:login',
-            'users:logout',
-            'users:signup',
+            self.get_home_url(),
+            self.get_login_url(),
+            self.get_logout_url(),
+            self.get_signup_url(),
         )
-        for name in urls:
+        for url in urls:
             with self.subTest():
-                url = reverse(name)
-                response = self.author_client.get(url)
+                response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_pages_availability_for_auth_user(self):
         urls = (
-            'notes:list',
-            'notes:success',
-            'notes:add',
+            self.get_notes_list_url(),
+            self.get_success_url(),
+            self.get_add_note_url(),
         )
-        for name in urls:
+        for url in urls:
             with self.subTest():
-                url = reverse(name)
                 response = self.author_client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_pages_availability_for_different_users(self):
+        urls = (
+            self.get_detail_note_url(self.note.slug),
+            self.get_edit_note_url(self.note.slug),
+            self.get_delete_note_url(self.note.slug),
+        )
         users_statuses = (
             (self.author_client, HTTPStatus.OK),
             (self.auth_user_client, HTTPStatus.NOT_FOUND),
         )
-        urls = (
-            'notes:detail',
-            'notes:edit',
-            'notes:delete',
-        )
         for user, status in users_statuses:
-            for name in urls:
-                with self.subTest(user=user, name=name):
-                    url = reverse(name, args=(self.note.slug,))
+            for url in urls:
+                with self.subTest(user=user, url=url):
                     response = user.get(url)
                     self.assertEqual(response.status_code, status)
 
     def test_redirects(self):
-        login_url = reverse('users:login')
+        login_url = self.get_login_url()
         urls = (
             ('notes:list', None),
             ('notes:success', None),

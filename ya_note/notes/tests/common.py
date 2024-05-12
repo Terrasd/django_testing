@@ -19,19 +19,51 @@ class CommonTestCase(TestCase):
         cls.data = {
             'title': 'Новый заголовок',
             'text': 'Новый текст',
-            'slug': 'new-slug'
+            'slug': 'new-slug',
         }
         cls.note = Note.objects.create(
             title='Заголовок',
             text='Текст',
             author=cls.author,
+            slug='new-slug',
         )
 
-    def get_notes_list_url(self):
+    @staticmethod
+    def get_notes_list_url():
         return reverse('notes:list')
 
-    def get_add_note_url(self):
+    @staticmethod
+    def get_add_note_url():
         return reverse('notes:add')
 
-    def get_edit_note_url(self, slug):
+    @staticmethod
+    def get_edit_note_url(slug):
         return reverse('notes:edit', args=[slug])
+
+    @staticmethod
+    def get_delete_note_url(slug):
+        return reverse('notes:delete', args=[slug])
+
+    @staticmethod
+    def get_home_url():
+        return reverse('notes:home')
+
+    @staticmethod
+    def get_login_url():
+        return reverse('users:login')
+
+    @staticmethod
+    def get_logout_url():
+        return reverse('users:logout')
+
+    @staticmethod
+    def get_signup_url():
+        return reverse('users:signup')
+
+    @staticmethod
+    def get_success_url():
+        return reverse('notes:success')
+
+    @staticmethod
+    def get_detail_note_url(slug):
+        return reverse('notes:detail', args=[slug])

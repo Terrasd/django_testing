@@ -23,6 +23,7 @@ def author_client(author, client):
     return client
 
 
+@pytest.fixture
 def guest_client(client):
     return client
 
@@ -82,3 +83,32 @@ def all_urls():
         'logout': reverse('users:logout'),
         'signup': reverse('users:signup')
     }
+
+
+@pytest.fixture
+def detail_url_news(news):
+    return reverse('news:detail', args=(news.id,))
+
+
+@pytest.fixture
+def detail_url_comm(comment):
+    return reverse('news:detail', args=(comment.id,))
+
+
+@pytest.fixture
+def detail_del_news(comment):
+    return reverse('news:delete', args=(comment.id,))
+
+
+@pytest.fixture
+def detail_edit_news(news):
+    return reverse('news:edit', args=(news.id,))
+
+
+@pytest.mark.parametrize(
+    'name',
+    ('news:edit', 'news:delete'),
+)
+@pytest.fixture
+def url_name_args(name, comment):
+    return reverse(name, args=(comment.id,))

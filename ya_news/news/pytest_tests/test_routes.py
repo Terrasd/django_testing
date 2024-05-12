@@ -1,6 +1,5 @@
 from http import HTTPStatus
 
-from django.urls import reverse
 import pytest
 
 from pytest_django.asserts import assertRedirects
@@ -14,8 +13,8 @@ def test_pages_availability(client, all_urls):
 
 
 @pytest.mark.django_db
-def test_detail_page(client, news):
-    url = reverse('news:detail', args=(news.id,))
+def test_detail_page(client, news, detail_url_news):
+    url = detail_url_news
     response = client.get(url)
     assert response.status_code == HTTPStatus.OK
 
@@ -32,9 +31,10 @@ def test_detail_page(client, news):
     ('news:edit', 'news:delete'),
 )
 def test_availability_for_comment_edit_and_delete(
-        parametrized_client, expected_status, name, comment
+        parametrized_client, expected_status, name, comment,
+        url_name_args
 ):
-    url = reverse(name, args=(comment.id,))
+    url = url_name_args
     response = parametrized_client.get(url)
     assert response.status_code == expected_status
 
@@ -44,9 +44,10 @@ def test_availability_for_comment_edit_and_delete(
     'name',
     ('news:edit', 'news:delete'),
 )
-def test_redirect_for_anonymous_client(client, all_urls, name, comment):
+def test_redirect_for_anonymous_client(client, all_urls, name, comment,
+                                       url_name_args):
     login_url = all_urls['login']
-    url = reverse(name, args=(comment.id,))
+    url = url_name_args
     expected_url = f'{login_url}?next={url}'
     response = client.get(url)
     assertRedirects(response, expected_url)

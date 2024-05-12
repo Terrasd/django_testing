@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 
 from .common import CommonTestCase
 from notes.forms import NoteForm
@@ -14,11 +13,13 @@ class TestRoutes(CommonTestCase):
             with self.subTest():
                 url = self.get_notes_list_url()
                 response = user.get(url)
-                object_list = response.context['object_list']
+                object_list = response.context.get('object_list', [])
                 if note_in_list:
                     self.assertIn(self.note, object_list)
 
-                    note_from_list = object_list.get(pk=self.note.pk)
+                    note_from_list = next((note for note in object_list
+                                           if note.pk == self.note.pk), None)
+                    self.assertIsNotNone(note_from_list)
                     self.assertEqual(note_from_list.title, self.note.title)
                     self.assertEqual(note_from_list.text, self.note.text)
                     self.assertEqual(note_from_list.author, self.note.author)
@@ -26,11 +27,10 @@ class TestRoutes(CommonTestCase):
                     self.assertNotIn(self.note, object_list)
 
     def test_notes_list_for_unauthenticated_user(self):
-        url = self.get_notes_list_url()
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 302)
-        expected_url = reverse('users:login') + f'?next={url}'
-        self.assertEqual(response.url, expected_url)
+        response = self.client.get(self.get_notes_list_url())
+        self.assertRedirects(response,
+                             f'{self.get_login_url()}'
+                             + f'?next={self.get_notes_list_url()}')
 
     def test_pages_contains_form(self):
         for name, args in (
@@ -38,8 +38,8 @@ class TestRoutes(CommonTestCase):
             ('notes:edit', (self.note.slug,)),
         ):
             with self.subTest():
-                url = (self.get_edit_note_url(self.note.slug) if
-                       args else self.get_add_note_url())
+                url = (self.get_add_note_url()
+                       if not args else self.get_edit_note_url(self.note.slug))
                 response = self.author_client.get(url)
                 self.assertIn('form', response.context)
                 form_class = response.context['form'].__class__

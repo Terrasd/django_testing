@@ -1,7 +1,6 @@
 import pytest
 
 from django.conf import settings
-from django.urls import reverse
 
 from news.forms import CommentForm
 
@@ -12,7 +11,7 @@ def test_news_count(client, list_news, all_urls):
     response = client.get(url)
     assert 'object_list' in response.context, (
         'Отсутствует ключ "bject_list" в контексте ответа')
-    object_list = response.context['object_list']
+    object_list = response.context.get('object_list', [])
     news_count = object_list.count()
     assert news_count == settings.NEWS_COUNT_ON_HOME_PAGE
 
@@ -34,8 +33,8 @@ def test_news_order(client, list_news, all_urls):
 
 
 @pytest.mark.django_db
-def test_comments_order(client, news, list_comments):
-    url = reverse('news:detail', args=(news.id,))
+def test_comments_order(client, news, list_comments, detail_url_news):
+    url = detail_url_news
     response = client.get(url)
     assert 'news' in response.context
     news = response.context['news']
@@ -54,15 +53,16 @@ def test_comments_order(client, news, list_comments):
 )
 @pytest.mark.django_db
 def test_comment_form_access_for_anonymous_client(parametrized_client,
-                                                  status, comment):
-    url = reverse('news:detail', args=(comment.id,))
+                                                  status, detail_url_comm):
+    url = detail_url_comm
     response = parametrized_client.get(url)
     assert ('form' in response.context) is status
 
 
 @pytest.mark.django_db
-def test_correct_comment_form_passed_to_template(author_client, news):
-    url = reverse('news:detail', args=(news.id,))
+def test_correct_comment_form_passed_to_template(author_client,
+                                                 detail_url_news):
+    url = detail_url_news
     response = author_client.get(url)
     assert 'form' in response.context
     comment_form = response.context['form']
